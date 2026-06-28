@@ -8,7 +8,6 @@
 </head>
 <body class="bg-gray-100 font-sans antialiased pb-10">
 
-    <!-- MODAL CADASTRO FORNECEDOR -->
     <div id="modalFornecedor" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">
             <h2 class="text-base font-bold text-gray-800">➕ Cadastrar Novo Fornecedor</h2>
@@ -63,16 +62,22 @@
                     <div id="feedbackProduto" class="mt-1 text-xs font-medium hidden"></div>
                     <input type="hidden" id="codProdutoFinal">
                 </div>
-                <div class="grid grid-cols-2 gap-2">
+                
+                <div class="grid grid-cols-3 gap-1.5">
                     <div>
-                        <label class="block text-2xs font-bold text-gray-600 uppercase">Qtd</label>
-                        <input type="number" id="quantidade" min="1" value="1" class="block w-full p-2 bg-white border border-gray-300 rounded-lg text-center">
+                        <label class="block text-[10px] font-bold text-gray-600 uppercase text-center">Qtd</label>
+                        <input type="number" id="quantidade" min="1" value="1" class="block w-full p-2 bg-white border border-gray-300 rounded-lg text-center text-sm">
                     </div>
                     <div>
-                        <label class="block text-2xs font-bold text-gray-600 uppercase">Preço Unit. (R$)</label>
-                        <input type="number" id="precoUnitario" min="0" step="0.01" placeholder="0,00" class="block w-full p-2 bg-white border border-gray-300 rounded-lg text-center">
+                        <label class="block text-[10px] font-bold text-gray-600 uppercase text-center">Preço Unit. (R$)</label>
+                        <input type="number" id="precoUnitario" min="0" step="0.01" placeholder="0,00" class="block w-full p-2 bg-white border border-gray-300 rounded-lg text-center text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-600 uppercase text-center">Preço Total (R$)</label>
+                        <input type="number" id="precoTotal" min="0" step="0.01" placeholder="0,00" class="block w-full p-2 bg-white border border-gray-300 rounded-lg text-center text-sm font-semibold text-blue-700">
                     </div>
                 </div>
+
                 <button type="button" id="btnAdicionarItem" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm shadow transition">
                     ➕ Adicionar Item à Lista
                 </button>
@@ -110,7 +115,7 @@
     </div>
 
     <script>
-        var URL_API = "https://script.google.com/macros/s/AKfycbwZyc_MrDqPWlXx8zIDLXsqpQlleHXeHmCoELtwxjKyl1ODJNI3W3feAtk0s58UOudu/exec";
+        var URL_API = "https://script.google.com/macros/s/AKfycbxcK4L-9H7GVZy_HG8xq5sWEFwLP9OnPn_6R-87brBIL98tKfBKJ3FfN_-yQj00znmjqg/exec";
 
         var bancoProdutos = [];
         var bancoDeFornecedores = [];
@@ -125,7 +130,50 @@
             document.getElementById("btnCadastrarFornecedor").addEventListener("click", abrirModalFornecedor);
             document.getElementById("btnModalCancelar").addEventListener("click", fecharModalFornecedor);
             document.getElementById("btnModalSalvar").addEventListener("click", salvarNovoFornecedor);
+
+            // ESCUTADORES PARA O CÁLCULO BIDIRECIONAL DINÂMICO
+            document.getElementById("quantidade").addEventListener("input", calcularValoresDinamicamente);
+            document.getElementById("precoUnitario").addEventListener("input", calcularValoresDinamicamente);
+            document.getElementById("precoTotal").addEventListener("input", calcularValoresDinamicamente);
         });
+
+        // FUNÇÃO DE CÁLCULO BIDIRECIONAL INTELIGENTE
+        function calcularValoresDinamicamente() {
+            var inputQtd = document.getElementById("quantidade");
+            var inputUnitario = document.getElementById("precoUnitario");
+            var inputTotal = document.getElementById("precoTotal");
+
+            var qtd = Number(inputQtd.value) || 0;
+            var ativo = document.activeElement.id;
+
+            // Tratamento preventivo para quantidade zerada ou negativa
+            if (qtd <= 0) {
+                if (ativo === "precoTotal") {
+                    inputUnitario.value = "";
+                } else {
+                    inputTotal.value = "";
+                }
+                return;
+            }
+
+            if (ativo === "quantidade" || ativo === "precoUnitario") {
+                // Se digitou na quantidade ou no unitário, calcula o total
+                var unitario = Number(inputUnitario.value) || 0;
+                if (inputUnitario.value === "") {
+                    inputTotal.value = "";
+                } else {
+                    inputTotal.value = (qtd * unitario).toFixed(2);
+                }
+            } else if (ativo === "precoTotal") {
+                // Se digitou direto no preço total, calcula e deduz o preço unitário
+                var total = Number(inputTotal.value) || 0;
+                if (inputTotal.value === "") {
+                    inputUnitario.value = "";
+                } else {
+                    inputUnitario.value = (total / qtd).toFixed(2);
+                }
+            }
+        }
 
         function carregarDadosIniciais() {
             fetch(URL_API)
@@ -195,6 +243,7 @@
             document.getElementById("modalNomeFornecedor").focus();
         }
 
+        // Continuação correta das funções sem alterações lógicas nas regras do carrinho do app original
         function fecharModalFornecedor() {
             document.getElementById("modalFornecedor").classList.add("hidden");
         }
@@ -280,6 +329,7 @@
             var buscaInput = document.getElementById("buscaProduto").value.trim();
             var qtd = Number(document.getElementById("quantidade").value) || 1;
             var preco = Number(document.getElementById("precoUnitario").value) || 0;
+            var totalItem = Number(document.getElementById("precoTotal").value) || (qtd * preco);
 
             if (!buscaInput) {
                 alert("Por favor, selecione ou digite um produto.");
@@ -294,7 +344,7 @@
                 descricao: descricaoExibicao,
                 quantidade: qtd,
                 precoUnitario: preco,
-                precoTotal: qtd * preco
+                precoTotal: totalItem
             });
 
             document.getElementById("buscaProduto").value = "";
@@ -302,6 +352,7 @@
             document.getElementById("feedbackProduto").classList.add("hidden");
             document.getElementById("quantidade").value = "1";
             document.getElementById("precoUnitario").value = "";
+            document.getElementById("precoTotal").value = "";
 
             atualizarInterfaceCarrinho();
         }
