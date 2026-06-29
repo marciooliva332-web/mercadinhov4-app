@@ -33,13 +33,13 @@
 
     <div class="max-w-md mx-auto bg-white min-h-screen shadow-md flex flex-col">
         <header class="bg-blue-600 text-white p-4 text-center font-bold text-xl shadow-sm">
-            🧾 Lançamento de Nota Fiscal (V4)
+            🧾 Coletor de informações (V4)
         </header>
 
         <div class="p-4 space-y-4 flex-1">
 
             <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">1. Escolha o Fornecedor</label>
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">1. Escolha o Cliente/Fornecedor</label>
                 <input type="text" id="buscaFornecedor" placeholder="Digite o nome do Fornecedor..."
                     class="block w-full p-3 bg-white border border-gray-300 rounded-lg text-base"
                     list="listaFornecedoresDatalist">
@@ -84,7 +84,7 @@
             </div>
 
             <div>
-                <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Itens da Nota Fiscal</h3>
+                <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Itens do Coletor</h3>
                 <div id="carrinhoVazio" class="text-center py-6 text-sm text-gray-400 bg-gray-50 rounded-lg border border-dashed border-gray-200">
                     Nenhum produto adicionado ainda.
                 </div>
@@ -104,12 +104,12 @@
             </div>
 
             <div class="bg-gray-900 text-white p-4 rounded-xl text-center shadow-inner">
-                <span class="text-2xs font-bold text-gray-400 uppercase tracking-widest block">VALOR TOTAL DA NOTA FISCAL</span>
+                <span class="text-2xs font-bold text-gray-400 uppercase tracking-widest block">VALOR TOTAL DO COLETOR</span>
                 <span id="totalNotaLabel" class="text-3xl font-black text-emerald-400">R$ 0,00</span>
             </div>
 
             <button type="button" id="btnFinalizarNota" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-4 rounded-xl text-lg shadow-md transition disabled:bg-gray-300 disabled:cursor-not-allowed" disabled>
-                📦 CONCLUIR E GRAVAR NOTA FISCAL
+                📦 CONCLUIR E GRAVAR COLETOR
             </button>
         </div>
     </div>
