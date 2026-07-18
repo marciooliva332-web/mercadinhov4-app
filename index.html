@@ -38,6 +38,17 @@
 
         <div class="p-4 space-y-4 flex-1">
 
+            <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 space-y-3">
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">Tipo de Nota (Receita ou Despesa)</label>
+                <div class="flex border-b border-gray-300" id="tabsReceitaDespesa">
+                    <button type="button" data-tab="despesa" class="tab-receita-despesa flex-1 py-2 px-2 text-xs font-bold border-b-2 -mb-px border-transparent text-gray-500 transition">Despesa</button>
+                    <button type="button" data-tab="receita" class="tab-receita-despesa flex-1 py-2 px-2 text-xs font-bold border-b-2 -mb-px border-transparent text-gray-500 transition">Receita</button>
+                    <button type="button" data-tab="outras" class="tab-receita-despesa flex-1 py-2 px-2 text-xs font-bold border-b-2 -mb-px border-transparent text-gray-500 transition">Outras opções</button>
+                </div>
+                <select id="selectOutrasOpcoes" class="hidden block w-full p-2 bg-white border border-gray-300 rounded-lg text-sm"></select>
+                <input type="hidden" id="codReceitaOuDespesa">
+            </div>
+
             <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">1. Escolha o Cliente ou Fornecedor</label>
                 <input type="text" id="buscaFornecedor" placeholder="Digite o nome do Cliente ou Fornecedor..."
@@ -52,26 +63,10 @@
                 <input type="hidden" id="codFornecedor">
             </div>
 
-            <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 space-y-3">
-                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">Tipo de Nota (Receita ou Despesa)</label>
-                <div class="grid grid-cols-3 gap-1.5" id="tabsReceitaDespesa">
-                    <button type="button" data-tab="despesa" class="tab-receita-despesa py-2 px-2 rounded-lg border border-gray-300 bg-white text-gray-600 text-xs font-bold transition">Despesa</button>
-                    <button type="button" data-tab="receita" class="tab-receita-despesa py-2 px-2 rounded-lg border border-gray-300 bg-white text-gray-600 text-xs font-bold transition">Receita</button>
-                    <button type="button" data-tab="outras" class="tab-receita-despesa py-2 px-2 rounded-lg border border-gray-300 bg-white text-gray-600 text-xs font-bold transition">Outras opções</button>
-                </div>
-                <select id="selectOutrasOpcoes" class="hidden block w-full p-2 bg-white border border-gray-300 rounded-lg text-sm"></select>
-                <input type="hidden" id="codReceitaOuDespesa">
-
-                <div>
-                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Cenário</label>
-                    <select id="selectCenario" class="block w-full p-3 bg-white border border-gray-300 rounded-lg text-base"></select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Observação (opcional)</label>
-                    <input type="text" id="inputObservacao" placeholder="Alguma observação sobre esta nota..."
-                        class="block w-full p-3 bg-white border border-gray-300 rounded-lg text-base">
-                </div>
+            <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Cenário</label>
+                <div id="botoesCenario" class="flex flex-wrap gap-1.5"></div>
+                <input type="hidden" id="codCenario">
             </div>
 
             <div class="bg-blue-50/50 p-3 rounded-lg border border-blue-200 space-y-3">
@@ -85,7 +80,7 @@
                     <input type="hidden" id="codProdutoFinal">
                 </div>
                 
-                <div class="grid grid-cols-3 gap-1.5">
+                <div class="grid grid-cols-4 gap-1.5">
                     <div>
                         <label class="block text-[10px] font-bold text-gray-600 uppercase text-center">Qtd</label>
                         <input type="number" id="quantidade" min="1" value="1" class="block w-full p-2 bg-white border border-gray-300 rounded-lg text-center text-sm">
@@ -97,6 +92,10 @@
                     <div>
                         <label class="block text-[10px] font-bold text-gray-600 uppercase text-center">Preço Total (R$)</label>
                         <input type="number" id="precoTotal" min="0" step="0.01" placeholder="0,00" class="block w-full p-2 bg-white border border-gray-300 rounded-lg text-center text-sm font-semibold text-blue-700">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-600 uppercase text-center">Observação</label>
+                        <input type="text" id="observacaoItem" placeholder="Opcional" class="block w-full p-2 bg-white border border-gray-300 rounded-lg text-center text-sm">
                     </div>
                 </div>
 
@@ -226,11 +225,11 @@
             var botoes = document.querySelectorAll(".tab-receita-despesa");
             botoes.forEach(function(botao) {
                 if (botao.dataset.tab === tab) {
-                    botao.classList.add("bg-blue-600", "text-white", "border-blue-600");
-                    botao.classList.remove("bg-white", "text-gray-600", "border-gray-300");
+                    botao.classList.add("border-blue-600", "text-blue-600");
+                    botao.classList.remove("border-transparent", "text-gray-500");
                 } else {
-                    botao.classList.remove("bg-blue-600", "text-white", "border-blue-600");
-                    botao.classList.add("bg-white", "text-gray-600", "border-gray-300");
+                    botao.classList.remove("border-blue-600", "text-blue-600");
+                    botao.classList.add("border-transparent", "text-gray-500");
                 }
             });
 
@@ -249,6 +248,41 @@
                 selectOutras.classList.remove("hidden");
                 campoFinal.value = selectOutras.value;
             }
+        }
+
+        // CONTROLE DOS BOTÕES DE CENÁRIO (gerados dinamicamente a partir da planilha)
+        function renderizarBotoesCenario() {
+            var container = document.getElementById("botoesCenario");
+            container.innerHTML = "";
+
+            bancoCenarios.forEach(function(c) {
+                var botao = document.createElement("button");
+                botao.type = "button";
+                botao.dataset.id = c.id;
+                botao.innerText = c.nome;
+                botao.className = "botao-cenario py-2 px-3 rounded-lg border border-gray-300 bg-white text-gray-600 text-xs font-bold transition";
+                botao.addEventListener("click", function() {
+                    selecionarCenario(c.id);
+                });
+                container.appendChild(botao);
+            });
+
+            if (bancoCenarios.length > 0) {
+                selecionarCenario(bancoCenarios[0].id);
+            }
+        }
+
+        function selecionarCenario(id) {
+            document.getElementById("codCenario").value = id;
+            document.querySelectorAll(".botao-cenario").forEach(function(botao) {
+                if (String(botao.dataset.id) === String(id)) {
+                    botao.classList.add("bg-blue-600", "text-white", "border-blue-600");
+                    botao.classList.remove("bg-white", "text-gray-600", "border-gray-300");
+                } else {
+                    botao.classList.remove("bg-blue-600", "text-white", "border-blue-600");
+                    botao.classList.add("bg-white", "text-gray-600", "border-gray-300");
+                }
+            });
         }
 
         function carregarDadosIniciais() {
@@ -271,16 +305,9 @@
                     datalistProd.appendChild(opt);
                 });
 
-                // Popula o dropdown de Cenário
+                // Renderiza os botões de Cenário (em vez de um dropdown)
                 bancoCenarios = data.cenarios || [];
-                var selectCenario = document.getElementById("selectCenario");
-                selectCenario.innerHTML = "";
-                bancoCenarios.forEach(function(c) {
-                    var opt = document.createElement("option");
-                    opt.value = c.id;
-                    opt.innerText = c.nome;
-                    selectCenario.appendChild(opt);
-                });
+                renderizarBotoesCenario();
 
                 // Popula o dropdown "Outras opções" de Receita ou Despesa
                 bancoReceitaDespesa = data.receitaOuDespesaOpcoes || [];
@@ -431,6 +458,7 @@
             var qtd = Number(document.getElementById("quantidade").value) || 1;
             var preco = Number(document.getElementById("precoUnitario").value) || 0;
             var totalItem = Number(document.getElementById("precoTotal").value) || (qtd * preco);
+            var observacaoItem = document.getElementById("observacaoItem").value.trim();
 
             if (!buscaInput) {
                 alert("Por favor, selecione ou digite um produto.");
@@ -445,7 +473,8 @@
                 descricao: descricaoExibicao,
                 quantidade: qtd,
                 precoUnitario: preco,
-                precoTotal: totalItem
+                precoTotal: totalItem,
+                observacao: observacaoItem
             });
 
             document.getElementById("buscaProduto").value = "";
@@ -454,6 +483,7 @@
             document.getElementById("quantidade").value = "1";
             document.getElementById("precoUnitario").value = "";
             document.getElementById("precoTotal").value = "";
+            document.getElementById("observacaoItem").value = "";
 
             atualizarInterfaceCarrinho();
         }
@@ -487,8 +517,11 @@
 
             carrinhoItens.forEach(function(item, index) {
                 totalNota += item.precoTotal;
+                var linhaObservacao = item.observacao
+                    ? "<br><span class='text-2xs text-gray-400 italic'>Obs: " + item.observacao + "</span>"
+                    : "";
                 corpo.innerHTML += "<tr>" +
-                    "<td class='p-2 font-medium text-gray-900'>" + item.descricao + "<br><span class='text-2xs text-gray-400'>Cod: " + item.codProduto + "</span></td>" +
+                    "<td class='p-2 font-medium text-gray-900'>" + item.descricao + "<br><span class='text-2xs text-gray-400'>Cod: " + item.codProduto + "</span>" + linhaObservacao + "</td>" +
                     "<td class='p-2 text-center text-gray-500'>" + item.quantidade + " x R$ " + item.precoUnitario.toFixed(2) + "</td>" +
                     "<td class='p-2 text-right font-bold text-gray-700'>R$ " + item.precoTotal.toFixed(2) + "</td>" +
                     "<td class='p-2 text-center'><button type='button' onclick='removerItemDoCarrinho(" + index + ")' class='text-red-500 hover:text-red-700 font-bold px-2'>✕</button></td>" +
@@ -511,8 +544,7 @@
                 return;
             }
 
-            var codCenario = document.getElementById("selectCenario").value;
-            var observacao = document.getElementById("inputObservacao").value.trim();
+            var codCenario = document.getElementById("codCenario").value;
 
             var btn = document.getElementById("btnFinalizarNota");
             btn.disabled = true;
@@ -521,7 +553,6 @@
             var payload = {
                 codFornecedor: codFornecedor,
                 cenario: codCenario,
-                observacao: observacao,
                 receitaOuDespesa: codReceitaOuDespesa,
                 itens: carrinhoItens
             };
@@ -538,7 +569,6 @@
                 document.getElementById("buscaFornecedor").value = "";
                 document.getElementById("codFornecedor").value = "";
                 document.getElementById("feedbackFornecedor").classList.add("hidden");
-                document.getElementById("inputObservacao").value = "";
                 selecionarTabReceitaDespesa("despesa");
                 atualizarInterfaceCarrinho();
             })
