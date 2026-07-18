@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mercadinho - Gerador de Nota Fiscal (V4)</title>
+    <title>Mercadinho - Gerador de Nota Fiscal (V5)</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 <body class="bg-gray-100 font-sans antialiased pb-10">
@@ -33,7 +33,7 @@
 
     <div class="max-w-md mx-auto bg-white min-h-screen shadow-md flex flex-col">
         <header class="bg-blue-600 text-white p-4 text-center font-bold text-xl shadow-sm">
-            🧾 Coletor de Informações (V4)
+            🧾 Coletor de Informações (V5)
         </header>
 
         <div class="p-4 space-y-4 flex-1">
@@ -50,6 +50,28 @@
                     ➕ Cadastrar este fornecedor
                 </button>
                 <input type="hidden" id="codFornecedor">
+            </div>
+
+            <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 space-y-3">
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">Tipo de Nota (Receita ou Despesa)</label>
+                <div class="grid grid-cols-3 gap-1.5" id="tabsReceitaDespesa">
+                    <button type="button" data-tab="despesa" class="tab-receita-despesa py-2 px-2 rounded-lg border border-gray-300 bg-white text-gray-600 text-xs font-bold transition">Despesa</button>
+                    <button type="button" data-tab="receita" class="tab-receita-despesa py-2 px-2 rounded-lg border border-gray-300 bg-white text-gray-600 text-xs font-bold transition">Receita</button>
+                    <button type="button" data-tab="outras" class="tab-receita-despesa py-2 px-2 rounded-lg border border-gray-300 bg-white text-gray-600 text-xs font-bold transition">Outras opções</button>
+                </div>
+                <select id="selectOutrasOpcoes" class="hidden block w-full p-2 bg-white border border-gray-300 rounded-lg text-sm"></select>
+                <input type="hidden" id="codReceitaOuDespesa">
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Cenário</label>
+                    <select id="selectCenario" class="block w-full p-3 bg-white border border-gray-300 rounded-lg text-base"></select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Observação (opcional)</label>
+                    <input type="text" id="inputObservacao" placeholder="Alguma observação sobre esta nota..."
+                        class="block w-full p-3 bg-white border border-gray-300 rounded-lg text-base">
+                </div>
             </div>
 
             <div class="bg-blue-50/50 p-3 rounded-lg border border-blue-200 space-y-3">
@@ -119,7 +141,13 @@
 
         var bancoProdutos = [];
         var bancoDeFornecedores = [];
+        var bancoCenarios = [];
+        var bancoReceitaDespesa = [];
         var carrinhoItens = [];
+
+        // Ordem de edição dos campos de valor, do mais recente para o mais antigo.
+        // O campo que estiver por último nessa lista é sempre o que será recalculado.
+        var ordemCampos = ["quantidade", "precoUnitario", "precoTotal"];
 
         document.addEventListener("DOMContentLoaded", function() {
             carregarDadosIniciais();
@@ -131,47 +159,95 @@
             document.getElementById("btnModalCancelar").addEventListener("click", fecharModalFornecedor);
             document.getElementById("btnModalSalvar").addEventListener("click", salvarNovoFornecedor);
 
-            // ESCUTADORES PARA O CÁLCULO BIDIRECIONAL DINÂMICO
+            // ESCUTADORES PARA O CÁLCULO TRIDIRECIONAL DINÂMICO (qtd, unitário, total)
             document.getElementById("quantidade").addEventListener("input", calcularValoresDinamicamente);
             document.getElementById("precoUnitario").addEventListener("input", calcularValoresDinamicamente);
             document.getElementById("precoTotal").addEventListener("input", calcularValoresDinamicamente);
+
+            // ESCUTADORES DAS ABAS DE RECEITA OU DESPESA
+            document.querySelectorAll(".tab-receita-despesa").forEach(function(botao) {
+                botao.addEventListener("click", function() {
+                    selecionarTabReceitaDespesa(botao.dataset.tab);
+                });
+            });
+            document.getElementById("selectOutrasOpcoes").addEventListener("change", function() {
+                document.getElementById("codReceitaOuDespesa").value = this.value;
+            });
         });
 
-        // FUNÇÃO DE CÁLCULO BIDIRECIONAL INTELIGENTE
-        function calcularValoresDinamicamente() {
+        // Atualiza a lista de "últimos campos editados", trazendo o campo atual para o topo.
+        function registrarEdicao(campoId) {
+            var posicaoAtual = ordemCampos.indexOf(campoId);
+            if (posicaoAtual > -1) {
+                ordemCampos.splice(posicaoAtual, 1);
+            }
+            ordemCampos.unshift(campoId);
+        }
+
+        // FUNÇÃO DE CÁLCULO TRIDIRECIONAL INTELIGENTE
+        // Sempre recalcula o campo que NÃO está entre os dois últimos editados pelo usuário.
+        function calcularValoresDinamicamente(evento) {
             var inputQtd = document.getElementById("quantidade");
             var inputUnitario = document.getElementById("precoUnitario");
             var inputTotal = document.getElementById("precoTotal");
 
+            registrarEdicao(evento.target.id);
+
+            // O terceiro item da lista é sempre o campo "esquecido", que será recalculado agora.
+            var campoParaRecalcular = ordemCampos[2];
+
             var qtd = Number(inputQtd.value) || 0;
-            var ativo = document.activeElement.id;
+            var unitario = Number(inputUnitario.value) || 0;
+            var total = Number(inputTotal.value) || 0;
 
-            // Tratamento preventivo para quantidade zerada ou negativa
-            if (qtd <= 0) {
-                if (ativo === "precoTotal") {
-                    inputUnitario.value = "";
-                } else {
-                    inputTotal.value = "";
-                }
-                return;
-            }
-
-            if (ativo === "quantidade" || ativo === "precoUnitario") {
-                // Se digitou na quantidade ou no unitário, calcula o total
-                var unitario = Number(inputUnitario.value) || 0;
-                if (inputUnitario.value === "") {
+            if (campoParaRecalcular === "precoTotal") {
+                if (qtd <= 0 || inputUnitario.value === "") {
                     inputTotal.value = "";
                 } else {
                     inputTotal.value = (qtd * unitario).toFixed(2);
                 }
-            } else if (ativo === "precoTotal") {
-                // Se digitou direto no preço total, calcula e deduz o preço unitário
-                var total = Number(inputTotal.value) || 0;
-                if (inputTotal.value === "") {
+            } else if (campoParaRecalcular === "precoUnitario") {
+                if (qtd <= 0 || inputTotal.value === "") {
                     inputUnitario.value = "";
                 } else {
                     inputUnitario.value = (total / qtd).toFixed(2);
                 }
+            } else if (campoParaRecalcular === "quantidade") {
+                if (unitario <= 0 || inputTotal.value === "") {
+                    inputQtd.value = "";
+                } else {
+                    inputQtd.value = (total / unitario).toFixed(3);
+                }
+            }
+        }
+
+        // CONTROLE DAS ABAS DE RECEITA OU DESPESA
+        function selecionarTabReceitaDespesa(tab) {
+            var botoes = document.querySelectorAll(".tab-receita-despesa");
+            botoes.forEach(function(botao) {
+                if (botao.dataset.tab === tab) {
+                    botao.classList.add("bg-blue-600", "text-white", "border-blue-600");
+                    botao.classList.remove("bg-white", "text-gray-600", "border-gray-300");
+                } else {
+                    botao.classList.remove("bg-blue-600", "text-white", "border-blue-600");
+                    botao.classList.add("bg-white", "text-gray-600", "border-gray-300");
+                }
+            });
+
+            var selectOutras = document.getElementById("selectOutrasOpcoes");
+            var campoFinal = document.getElementById("codReceitaOuDespesa");
+
+            if (tab === "despesa") {
+                selectOutras.classList.add("hidden");
+                var opcaoDespesa = bancoReceitaDespesa.find(function(o) { return o.nome.toLowerCase() === "despesa"; });
+                campoFinal.value = opcaoDespesa ? opcaoDespesa.id : "";
+            } else if (tab === "receita") {
+                selectOutras.classList.add("hidden");
+                var opcaoReceita = bancoReceitaDespesa.find(function(o) { return o.nome.toLowerCase() === "receita"; });
+                campoFinal.value = opcaoReceita ? opcaoReceita.id : "";
+            } else {
+                selectOutras.classList.remove("hidden");
+                campoFinal.value = selectOutras.value;
             }
         }
 
@@ -194,6 +270,31 @@
                     opt.value = p.descricao;
                     datalistProd.appendChild(opt);
                 });
+
+                // Popula o dropdown de Cenário
+                bancoCenarios = data.cenarios || [];
+                var selectCenario = document.getElementById("selectCenario");
+                selectCenario.innerHTML = "";
+                bancoCenarios.forEach(function(c) {
+                    var opt = document.createElement("option");
+                    opt.value = c.id;
+                    opt.innerText = c.nome;
+                    selectCenario.appendChild(opt);
+                });
+
+                // Popula o dropdown "Outras opções" de Receita ou Despesa
+                bancoReceitaDespesa = data.receitaOuDespesaOpcoes || [];
+                var selectOutras = document.getElementById("selectOutrasOpcoes");
+                selectOutras.innerHTML = "";
+                bancoReceitaDespesa.forEach(function(o) {
+                    var opt = document.createElement("option");
+                    opt.value = o.id;
+                    opt.innerText = o.nome;
+                    selectOutras.appendChild(opt);
+                });
+
+                // Aba "Despesa" fica selecionada por padrão ao carregar
+                selecionarTabReceitaDespesa("despesa");
             })
             .catch(function(err) { alert("Erro ao conectar com a planilha.\n" + err); });
         }
@@ -404,11 +505,26 @@
                 return;
             }
 
+            var codReceitaOuDespesa = document.getElementById("codReceitaOuDespesa").value;
+            if (!codReceitaOuDespesa) {
+                alert("Por favor, selecione o tipo de nota (Despesa, Receita ou outra opção).");
+                return;
+            }
+
+            var codCenario = document.getElementById("selectCenario").value;
+            var observacao = document.getElementById("inputObservacao").value.trim();
+
             var btn = document.getElementById("btnFinalizarNota");
             btn.disabled = true;
             btn.innerText = "⏳ GRAVANDO NOTA NO GOOGLE SHEETS...";
 
-            var payload = { codFornecedor: codFornecedor, itens: carrinhoItens };
+            var payload = {
+                codFornecedor: codFornecedor,
+                cenario: codCenario,
+                observacao: observacao,
+                receitaOuDespesa: codReceitaOuDespesa,
+                itens: carrinhoItens
+            };
 
             fetch(URL_API, {
                 method: "POST",
@@ -422,6 +538,8 @@
                 document.getElementById("buscaFornecedor").value = "";
                 document.getElementById("codFornecedor").value = "";
                 document.getElementById("feedbackFornecedor").classList.add("hidden");
+                document.getElementById("inputObservacao").value = "";
+                selecionarTabReceitaDespesa("despesa");
                 atualizarInterfaceCarrinho();
             })
             .catch(function(err) { alert("Erro ao enviar dados: " + err); })
