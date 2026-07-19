@@ -31,6 +31,53 @@
         </div>
     </div>
 
+    <div id="modalProduto" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <h2 class="text-base font-bold text-gray-800">➕ Cadastrar Novo Produto</h2>
+            <div>
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Descrição (obrigatório)</label>
+                <input type="text" id="modalDescricaoProduto"
+                    class="block w-full p-3 border border-gray-300 rounded-lg text-base focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Nome do produto...">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Classgrupo (opcional)</label>
+                <select id="modalClassgrupoProduto" class="block w-full p-3 border border-gray-300 rounded-lg text-base">
+                    <option value="">Nenhum</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">PRPP (opcional)</label>
+                <select id="modalPrppProduto" class="block w-full p-3 border border-gray-300 rounded-lg text-base">
+                    <option value="">Nenhum</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Ocorrência (opcional)</label>
+                <select id="modalOcorrenciaProduto" class="block w-full p-3 border border-gray-300 rounded-lg text-base">
+                    <option value="">Nenhuma</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">ClassLocal (opcional)</label>
+                <select id="modalClassLocalProduto" class="block w-full p-3 border border-gray-300 rounded-lg text-base">
+                    <option value="">Nenhum</option>
+                </select>
+            </div>
+            <div id="modalFeedbackProduto" class="text-xs font-semibold hidden"></div>
+            <div class="flex gap-2">
+                <button type="button" id="btnModalCancelarProduto"
+                    class="flex-1 py-2 px-4 rounded-lg border border-gray-300 text-gray-600 font-bold text-sm hover:bg-gray-50 transition">
+                    Cancelar
+                </button>
+                <button type="button" id="btnModalSalvarProduto"
+                    class="flex-1 py-2 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow transition">
+                    Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="max-w-md mx-auto bg-white min-h-screen shadow-md flex flex-col">
         <header class="bg-blue-600 text-white p-4 text-center font-bold text-xl shadow-sm">
             🧾 Coletor de Informações (V5)
@@ -77,6 +124,10 @@
                         list="listaProdutosDatalist">
                     <datalist id="listaProdutosDatalist"></datalist>
                     <div id="feedbackProduto" class="mt-1 text-xs font-medium hidden"></div>
+                    <button type="button" id="btnCadastrarProduto"
+                        class="hidden mt-2 w-full py-2 px-4 rounded-lg border-2 border-dashed border-blue-400 text-blue-600 font-bold text-sm hover:bg-blue-50 transition">
+                        ➕ Cadastrar este produto
+                    </button>
                     <input type="hidden" id="codProdutoFinal">
                 </div>
                 
@@ -142,6 +193,10 @@
         var bancoDeFornecedores = [];
         var bancoCenarios = [];
         var bancoReceitaDespesa = [];
+        var bancoClassgrupo = [];
+        var bancoPrpp = [];
+        var bancoOcorrencia = [];
+        var bancoClassLocal = [];
         var carrinhoItens = [];
 
         // Ordem de edição dos campos de valor, do mais recente para o mais antigo.
@@ -157,6 +212,9 @@
             document.getElementById("btnCadastrarFornecedor").addEventListener("click", abrirModalFornecedor);
             document.getElementById("btnModalCancelar").addEventListener("click", fecharModalFornecedor);
             document.getElementById("btnModalSalvar").addEventListener("click", salvarNovoFornecedor);
+            document.getElementById("btnCadastrarProduto").addEventListener("click", abrirModalProduto);
+            document.getElementById("btnModalCancelarProduto").addEventListener("click", fecharModalProduto);
+            document.getElementById("btnModalSalvarProduto").addEventListener("click", salvarNovoProduto);
 
             // ESCUTADORES PARA O CÁLCULO TRIDIRECIONAL DINÂMICO (qtd, unitário, total)
             document.getElementById("quantidade").addEventListener("input", calcularValoresDinamicamente);
@@ -322,8 +380,34 @@
 
                 // Aba "Despesa" fica selecionada por padrão ao carregar
                 selecionarTabReceitaDespesa("despesa");
+
+                // NOVO: listas de classificação usadas no cadastro de produto
+                bancoClassgrupo = data.classgrupos || [];
+                bancoPrpp = data.prpps || [];
+                bancoOcorrencia = data.ocorrencias || [];
+                bancoClassLocal = data.classlocais || [];
+                popularSelectClassificacao("modalClassgrupoProduto", bancoClassgrupo, "Nenhum");
+                popularSelectClassificacao("modalPrppProduto", bancoPrpp, "Nenhum");
+                popularSelectClassificacao("modalOcorrenciaProduto", bancoOcorrencia, "Nenhuma");
+                popularSelectClassificacao("modalClassLocalProduto", bancoClassLocal, "Nenhum");
             })
             .catch(function(err) { alert("Erro ao conectar com a planilha.\n" + err); });
+        }
+
+        // Preenche um <select> de classificação com uma opção em branco no topo (campo opcional)
+        function popularSelectClassificacao(idSelect, lista, textoOpcaoVazia) {
+            var select = document.getElementById(idSelect);
+            select.innerHTML = "";
+            var optVazia = document.createElement("option");
+            optVazia.value = "";
+            optVazia.innerText = textoOpcaoVazia;
+            select.appendChild(optVazia);
+            lista.forEach(function(item) {
+                var opt = document.createElement("option");
+                opt.value = item.id;
+                opt.innerText = item.nome;
+                select.appendChild(opt);
+            });
         }
 
         function recarregarDatalistFornecedores() {
@@ -427,10 +511,95 @@
             });
         }
 
+        // NOVO: modal de cadastro de produto (Descrição obrigatória; classificações opcionais).
+        // Estruturado de forma que dá pra reaproveitar esse mesmo modal futuramente pra edição
+        // de produtos existentes, bastando pré-preencher os campos e trocar a ação enviada no POST.
+        function abrirModalProduto() {
+            var textoDigitado = document.getElementById("buscaProduto").value.trim();
+            document.getElementById("modalDescricaoProduto").value = textoDigitado;
+            document.getElementById("modalClassgrupoProduto").value = "";
+            document.getElementById("modalPrppProduto").value = "";
+            document.getElementById("modalOcorrenciaProduto").value = "";
+            document.getElementById("modalClassLocalProduto").value = "";
+            document.getElementById("modalFeedbackProduto").classList.add("hidden");
+            document.getElementById("modalProduto").classList.remove("hidden");
+            document.getElementById("modalDescricaoProduto").focus();
+        }
+
+        function fecharModalProduto() {
+            document.getElementById("modalProduto").classList.add("hidden");
+        }
+
+        function salvarNovoProduto() {
+            var descricao = document.getElementById("modalDescricaoProduto").value.trim();
+            var classgrupo = document.getElementById("modalClassgrupoProduto").value;
+            var prpp = document.getElementById("modalPrppProduto").value;
+            var ocorrencia = document.getElementById("modalOcorrenciaProduto").value;
+            var classlocal = document.getElementById("modalClassLocalProduto").value;
+            var feedback = document.getElementById("modalFeedbackProduto");
+            var btnSalvar = document.getElementById("btnModalSalvarProduto");
+
+            if (!descricao) {
+                feedback.innerHTML = "⚠️ Digite uma descrição para o produto.";
+                feedback.className = "text-xs font-semibold text-red-500 block";
+                return;
+            }
+
+            btnSalvar.disabled = true;
+            btnSalvar.innerText = "⏳ Salvando...";
+
+            fetch(URL_API, {
+                method: "POST",
+                redirect: "follow",
+                body: JSON.stringify({
+                    acao: "cadastrarProduto",
+                    descricao: descricao,
+                    classgrupo: classgrupo,
+                    prpp: prpp,
+                    ocorrencia: ocorrencia,
+                    classlocal: classlocal
+                })
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(resposta) {
+                if (resposta.status === "success") {
+                    var novo = resposta.produto;
+                    bancoProdutos.push(novo);
+                    bancoProdutos.sort(function(a, b) {
+                        return a.descricao.localeCompare(b.descricao, 'pt-BR');
+                    });
+                    var datalistProd = document.getElementById("listaProdutosDatalist");
+                    var opt = document.createElement("option");
+                    opt.value = novo.descricao;
+                    datalistProd.appendChild(opt);
+
+                    document.getElementById("buscaProduto").value = novo.descricao;
+                    document.getElementById("codProdutoFinal").value = novo.id;
+                    var feedbackProd = document.getElementById("feedbackProduto");
+                    feedbackProd.innerHTML = "✓ " + novo.descricao;
+                    feedbackProd.className = "mt-1 text-xs font-semibold text-emerald-600 block";
+                    document.getElementById("btnCadastrarProduto").classList.add("hidden");
+                    fecharModalProduto();
+                } else {
+                    feedback.innerHTML = "Erro: " + resposta.message;
+                    feedback.className = "text-xs font-semibold text-red-500 block";
+                }
+            })
+            .catch(function(err) {
+                feedback.innerHTML = "Erro ao salvar: " + err;
+                feedback.className = "text-xs font-semibold text-red-500 block";
+            })
+            .finally(function() {
+                btnSalvar.disabled = false;
+                btnSalvar.innerText = "Salvar";
+            });
+        }
+
         function verificarProdutoDigitado() {
             var valor = document.getElementById("buscaProduto").value.trim();
             var feedback = document.getElementById("feedbackProduto");
             var campoFinal = document.getElementById("codProdutoFinal");
+            var btnCadastrarProduto = document.getElementById("btnCadastrarProduto");
 
             var produtoEncontrado = bancoProdutos.find(function(p) {
                 return String(p.id) === valor ||
@@ -442,13 +611,16 @@
                 feedback.innerHTML = "✓ " + produtoEncontrado.descricao;
                 feedback.className = "mt-1 text-xs font-semibold text-emerald-600 block";
                 campoFinal.value = produtoEncontrado.id;
+                btnCadastrarProduto.classList.add("hidden");
             } else if (valor.length > 0) {
                 feedback.innerHTML = "⚠️ Novo código/produto manual.";
                 feedback.className = "mt-1 text-xs font-semibold text-amber-600 block";
                 campoFinal.value = valor;
+                btnCadastrarProduto.classList.remove("hidden");
             } else {
                 feedback.classList.add("hidden");
                 campoFinal.value = "";
+                btnCadastrarProduto.classList.add("hidden");
             }
         }
 
